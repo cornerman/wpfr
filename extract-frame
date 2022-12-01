@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail
+set -Eeuo pipefail
+# cd to script location
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+# read video
+VIDEO=$(cat "$HOME/.wpfr/current-video")
+
+# read position
+POSITION=$(cat "$HOME/.wpfr/current-position")
+
+# play video as mpv, take screenshot
+MPVSOCKET=$(mktemp --suffix="_mpv_ipc")
+echo "$MPVSOCKET"
+
+mpv --wid=0 --really-quiet --input-ipc-server="$MPVSOCKET" --start="$POSITION" --frames=1 --no-osc --no-osd-bar --osd-level=0 --pause --screenshot-jpeg-quality=100 "$VIDEO" &
+sleep 1
+echo "screenshot-to-file $HOME/.wpfr/current-frame.jpg" | socat - "$MPVSOCKET"
+echo "quit" | socat - "$MPVSOCKET"
+# wait for all background jobs to finish
+wait

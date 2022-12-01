@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail
+set -Eeuo pipefail
+# cd to script location
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+CURRENT_VIDEO=$(cat "$HOME/.wpfr/current-video")
+
+# video, or alternatively, CURRENT_VIDEO
+VIDEO=${1:-$CURRENT_VIDEO}
+
+# duration of the video in seconds
+DURATION=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$VIDEO")
+echo "Duration: $DURATION"
+
+./kill-video
+
+
+
+# MAX_BRIGHTNESS=0.35
+# BRIGHTNESS=2.0
+
+# https://stackoverflow.com/questions/25174231/how-to-count-the-number-of-black-and-white-pixels-linux-imagemagik-etc
+
+# until (( $(echo "$BRIGHTNESS > $MAX_BRIGHTNESS" | bc -l) )); do
+  # random position between 0 and the duration of the video, fractional
+  # secure random
+  # RANDOM_POSITION=$(echo "$RANDOM * $DURATION / 32768" | bc -l)
+  R=$(bc -l <<< "scale=16; $(od -t u2 -An -N2 /dev/random)/(2 ^ 16)")
+  RANDOM_POSITION=$(bc -l <<< "$R * $DURATION")
+  echo "Random position: $RANDOM_POSITION"
+
+  # write random number to file, in home folder
+  echo "$RANDOM_POSITION" > "$HOME/.wpfr/current-position"
+
+  ./extract-frame
+
+  # BRIGHTNESS=$(convert "$HOME/.wpfr/current-frame.jpg" -format "%[fx:mean]" info:)
+  # echo "brightness: $BRIGHTNESS"
+# done
+
+./set-wallpaper
+
+
+
+
+# seure random number, uniform between 0 and 1
+R=

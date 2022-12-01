@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail
+set -Eeuo pipefail
+# cd to script location
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+VIDEO=$(cat "$HOME/.wpfr/current-video")
+POSITION=$(cat "$HOME/.wpfr/current-position")
+
+# decrease position by 2 seconds
+POSITION=$(echo "$POSITION - 2" | bc)
+
+# play video as wallpaper
+./kill-video
+# TODO: picom:
+# https://github.com/chjj/compton/issues/226
+# xwinwrap -ov -fs -- mpv --wid=WID --no-audio --start="$POSITION" "$VIDEO" || true
+mpv --no-audio --start="$POSITION" "$VIDEO" || true
+./set-wallpaper
+
+
+
+

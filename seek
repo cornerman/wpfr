@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail
+set -Eeuo pipefail
+
+CURRENT_VIDEO=$(cat "$HOME/.wpfr/current-video")
+
+DELTA=${1:-1}
+
+# video, or alternatively, CURRENT_VIDEO
+VIDEO=${2:-$CURRENT_VIDEO}
+
+# second parameter is delta, optional, default=1
+
+
+# read position from file, in home folder
+POSITION=$(cat "$HOME/.wpfr/current-position")
+
+# increase position by delta
+POSITION=$(echo "$POSITION + $DELTA" | bc)
+
+# write position to file, in home folder
+echo "$POSITION" > "$HOME/.wpfr/current-position"
+
+./kill-video
+./extract-frame
+./set-wallpaper
+
+

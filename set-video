@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail
+set -Eeuo pipefail
+# cd to script location
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+VIDEO=$1
+
+# write video into current
+mkdir -p "$HOME/.wpfr"
+echo "$VIDEO" > "$HOME/.wpfr/current"
+
+./random-frame
