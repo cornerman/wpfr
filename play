@@ -12,7 +12,7 @@ POSITION=$(echo "$POSITION - 2" | bc)
 
 # play video as wallpaper
 ./kill-video
-ö mpv --wid=0 --no-audio --start="$POSITION" "$VIDEO" || true
+# mpv --wid=0 --no-audio --start="$POSITION" "$VIDEO" || true
 # works with picom:
 xwinwrap -ov -fs -- mpv -wid WID --no-audio --start="$POSITION" "$VIDEO" || true
 ./set-wallpaper

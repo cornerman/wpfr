@@ -40,7 +40,8 @@ done
 # play video as mpv, take screenshot
 mpvsocket=$(mktemp --suffix="_mpv_ipc")
 
-mpv --really-quiet --input-ipc-server="$mpvsocket" --start="$relative_position" --frames=1 --no-osc --no-osd-bar --osd-level=0 --pause --screenshot-jpeg-quality=100 "$selected_video" &
+# xwinwrap -ov -fs -- mpv -wid WID  --really-quiet --input-ipc-server="$mpvsocket" --start="$relative_position" --frames=1 --no-osc --no-osd-bar --osd-level=0 --pause --screenshot-jpeg-quality=100 "$selected_video" &
+mpv -wid 0  --really-quiet --input-ipc-server="$mpvsocket" --start="$relative_position" --frames=1 --no-osc --no-osd-bar --osd-level=0 --pause --screenshot-jpeg-quality=100 "$selected_video" &
 # get pid
 mpvpid=$!
 sleep 0.8
