@@ -4,19 +4,57 @@ set -Eeuo pipefail
 # cd to script location
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-# read video
-VIDEO=$(cat "$HOME/.wpfr/current-video")
 
-# read position
-POSITION=$(cat "$HOME/.wpfr/current-position")
+# get total duration
+total_duration=$(cat "$HOME/.wpfr/total-duration")
+
+# get current position
+current_position=$(cat "$HOME/.wpfr/current-position")
+
+# echo "total_duration: $total_duration"
+# echo "current_position: $current_position"
+
+# determine video and relative position
+# iterate over all videos
+cumulative_duration=0
+for video in "$HOME/.wpfr/videos/duration/"*; do
+    # get filename
+    filename=$(basename "$video")
+    # get duration
+    duration=$(cat "$video")
+    # add duration to cumulative duration
+    cumulative_duration=$(echo "$cumulative_duration + $duration" | bc)
+
+    # if cumulative duration is greater than current position
+    if (( $(echo "$cumulative_duration > $current_position" | bc -l) )); then
+        # set video and relative position
+        selected_video=$(cat "$HOME/.wpfr/videos/path/$filename")
+        relative_position=$(echo "$current_position - ($cumulative_duration - $duration)" | bc)
+        break
+    fi
+done
+
+# echo "selected_video: $selected_video"
+# echo "relative_position: $relative_position"
 
 # play video as mpv, take screenshot
-MPVSOCKET=$(mktemp --suffix="_mpv_ipc")
-echo "$MPVSOCKET"
+mpvsocket=$(mktemp --suffix="_mpv_ipc")
 
-mpv --wid=0 --really-quiet --input-ipc-server="$MPVSOCKET" --start="$POSITION" --frames=1 --no-osc --no-osd-bar --osd-level=0 --pause --screenshot-jpeg-quality=100 "$VIDEO" &
-sleep 1
-echo "screenshot-to-file $HOME/.wpfr/current-frame.jpg" | socat - "$MPVSOCKET"
-echo "quit" | socat - "$MPVSOCKET"
+mpv --really-quiet --input-ipc-server="$mpvsocket" --start="$relative_position" --frames=1 --no-osc --no-osd-bar --osd-level=0 --pause --screenshot-jpeg-quality=100 "$selected_video" &
+# get pid
+mpvpid=$!
+sleep 0.8
+
+# unique filename to avoid concurrent writes of different instances to the same file
+screenshot_filename="/tmp/mpv_${mpvpid}_screenshot.jpg"
+
+# echo "taking screenshot..."
+echo "screenshot-to-file $screenshot_filename" | socat - "$mpvsocket"
+sleep 0.7
+
+mv "$screenshot_filename" "$HOME/.wpfr/current-frame.jpg"
+
+kill $mpvpid
+
 # wait for all background jobs to finish
 wait
