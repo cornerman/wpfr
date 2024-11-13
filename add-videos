@@ -6,8 +6,6 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 # iterate over all arguments
 # write duration of video to $HOME/.wpfr/videos/$filename
-# calculate total duration
-total_duration=0
 mkdir -p "$HOME/.wpfr/videos/"{duration,path}
 for arg in "$@"; do
     # get absolute path
@@ -16,12 +14,17 @@ for arg in "$@"; do
     filename=$(basename "$path")
     # get duration
     duration=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$path")
-    total_duration=$(echo "$total_duration + $duration" | bc)
     # write duration to file
     echo "$duration" > "$HOME/.wpfr/videos/duration/$filename"
     # write path to file
     echo "$path" > "$HOME/.wpfr/videos/path/$filename"
 done
 
+# calculate total duration of all videos
+total_duration=0
+for duration in "$HOME/.wpfr/videos/duration/"*; do
+  duration=$(cat "$duration")
+  total_duration=$(echo "$total_duration + $duration" | bc)
+done
 echo "$total_duration" > "$HOME/.wpfr/videos/total-duration"
 

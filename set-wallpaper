@@ -4,6 +4,7 @@ set -Eeuo pipefail
 # cd to script location
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
+echo "setting wallpaper..."
 
 # set as wallpaper
 feh --bg-fill $HOME/.wpfr/current-frame.jpg

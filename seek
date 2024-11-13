@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
 # https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail
 set -Eeuo pipefail
+# cd to script location
+cd "$(dirname "${BASH_SOURCE[0]}")"
 
-CURRENT_VIDEO=$(cat "$HOME/.wpfr/current-video")
 
 DELTA=${1:-1}
-
-# video, or alternatively, CURRENT_VIDEO
-VIDEO=${2:-$CURRENT_VIDEO}
-
-# second parameter is delta, optional, default=1
 
 
 # read position from file, in home folder

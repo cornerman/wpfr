@@ -34,28 +34,70 @@ for video in "$HOME/.wpfr/videos/duration/"*; do
     fi
 done
 
-# echo "selected_video: $selected_video"
-# echo "relative_position: $relative_position"
-
-# play video as mpv, take screenshot
-mpvsocket=$(mktemp --suffix="_mpv_ipc")
-
-# xwinwrap -ov -fs -- mpv -wid WID  --really-quiet --input-ipc-server="$mpvsocket" --start="$relative_position" --frames=1 --no-osc --no-osd-bar --osd-level=0 --pause --screenshot-jpeg-quality=100 "$selected_video" &
-mpv -wid 0  --really-quiet --input-ipc-server="$mpvsocket" --start="$relative_position" --frames=1 --no-osc --no-osd-bar --osd-level=0 --pause --screenshot-jpeg-quality=100 "$selected_video" &
-# get pid
-mpvpid=$!
-sleep 0.8
+echo "selected_video: $selected_video"
+echo "$selected_video" > "$HOME/.wpfr/current-video"
+echo "$relative_position" > "$HOME/.wpfr/current-relative-position"
 
 # unique filename to avoid concurrent writes of different instances to the same file
-screenshot_filename="/tmp/mpv_${mpvpid}_screenshot.jpg"
 
-# echo "taking screenshot..."
-echo "screenshot-to-file $screenshot_filename" | socat - "$mpvsocket"
-sleep 0.7
 
-mv "$screenshot_filename" "$HOME/.wpfr/current-frame.jpg"
+screenshot() (
+  videofile="$1"
+  time="$2"
+  targetfile="$3"
 
-kill $mpvpid
+  mpvsocket=$(mktemp --suffix="_mpv_ipc")
 
-# wait for all background jobs to finish
-wait
+  # only mpv
+  # mpv -wid 0  --really-quiet --input-ipc-server="$mpvsocket" --no-audio --no-sub --start="$time" --frames=1 --no-osc --no-osd-bar --osd-level=0 --pause --screenshot-jpeg-quality=100 "$videofile" &
+
+  # xwinwrap in little window
+  #  
+  xwinwrap -ov -g 32x24+50+50 -- mpv -wid WID --really-quiet --input-ipc-server="$mpvsocket" --hwdec=no --no-audio --no-sub --start="$time" --frames=1 --no-osc --no-osd-bar --osd-level=0 --pause --screenshot-jpeg-quality=100 -- "$videofile" &
+
+  # xwinwrap fullscreen
+  # xwinwrap -ov -fs -- mpv -wid WID  --really-quiet --input-ipc-server="$mpvsocket" --no-audio --no-sub --start="$time" --frames=1 --no-osc --no-osd-bar --osd-level=0 --pause --screenshot-jpeg-quality=100 "$videofile" &
+
+  # get pid
+  mpvpid=$!
+
+  # wait until mpv is ready to accept commands
+  until echo '{ "command": ["get_property", "seeking"] }' | socat - "$mpvsocket" | grep -q "false"; do
+    echo "waiting for mpv to become ready..."
+    sleep 0.1
+  done
+
+
+  echo "taking screenshot..."
+  rm -f "$targetfile"
+  echo "screenshot-to-file $targetfile" | socat - "$mpvsocket"
+
+  # quit mpv
+  echo '{ "command": ["quit"] }' | socat - "$mpvsocket"
+
+  # wait until file appears
+  while [ ! -f "$targetfile" ]; do
+    sleep 0.5
+  done
+
+  convert -trim "$targetfile" "$targetfile"
+
+  echo "screenshot taken"
+
+  # wait for all background jobs to finish
+  wait
+  rm -f "$mpvsocket"
+)
+
+
+# screenshot2() (
+#   videofile="$1"
+#   time="$2"
+#   targetfile="$3"
+
+#   # extract frame from video
+#   mpv --vo=image --vo-image-outdir=/tmp --vo-image-jpeg-quality=100 --start="$time" --frames=1 --no-osc --no-osd-bar --osd-level=0 "$videofile"
+#   mv "/tmp/00000001.jpg" "$targetfile"
+# )
+
+time screenshot "$selected_video" "$relative_position" "$HOME/.wpfr/current-frame.jpg"

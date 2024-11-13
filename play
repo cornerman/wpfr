@@ -4,11 +4,14 @@ set -Eeuo pipefail
 # cd to script location
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
+
 VIDEO=$(cat "$HOME/.wpfr/current-video")
-POSITION=$(cat "$HOME/.wpfr/current-position")
+POSITION=$(cat "$HOME/.wpfr/current-relative-position")
+
+echo "position: $POSITION"
 
 # decrease position by 2 seconds
-POSITION=$(echo "$POSITION - 2" | bc)
+# POSITION=$(echo "$POSITION - 2" | bc)
 
 # play video as wallpaper
 ./kill-video

@@ -12,33 +12,21 @@ theme=${1:-$(cat "$HOME/.theme")}
 total_duration=$(cat "$HOME/.wpfr/videos/total-duration")
 
 nextRandomFrame() (
+  echo "next random frame..."
+
   # get random number between 0 and total duration
   R=$(bc -l <<< "scale=16; $(od -t u2 -An -N2 /dev/random)/(2 ^ 16)")
   random_position=$(bc -l <<< "scale=16; $R * $total_duration")
   echo $random_position > "$HOME/.wpfr/current-position"
+  echo $random_position >> "$HOME/.wpfr/positions"
   ./extract-frame
-  ./set-wallpaper
 )
 
-if [[ "$theme" == "light" ]]; then
+# $theme is either `light` or `dark`
+# the command `image-theme <image>` returns `light` or `dark`
+# call nextRandomFrame until a frame fits the theme
+nextRandomFrame
+until [[ "$theme" == "$($HOME/bin/image-theme "$HOME/.wpfr/current-frame.jpg")" ]]; do
   nextRandomFrame
-else
-  # look for a dark picture
-  max_brightness=0.25
-  # if theme is light, skip loop
-  brightness=1.0
-  until (( $(echo "$brightness < $max_brightness" | bc -l) )); do
-      nextRandomFrame
-
-      # get random frame brightness
-      frame_brightness=$(convert "$HOME/.wpfr/current-frame.jpg" -colorspace gray -threshold 25% -format "%[fx:mean]" info:)
-      if (( $(echo "$frame_brightness < $brightness" | bc -l) )); then
-          brightness=$frame_brightness
-      fi
-      echo "___"$frame_brightness, best: $brightness, target: $max_brightness"___"
-  done
-fi
-
-
-
-
+done
+./set-wallpaper
